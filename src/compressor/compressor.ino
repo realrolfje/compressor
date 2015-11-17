@@ -22,6 +22,6 @@ void loop() {
   samplebuffer[headpointer] = analogRead(inputPin);
   analogWrite(outputPin, samplebuffer[tailpointer]);
 
-  headpointer = (headpointer++) mod buffersize;
-  tailpointer = (tailpointer++) mod buffersize;
+  headpointer = (headpointer++) % buffersize;
+  tailpointer = (tailpointer++) % buffersize;
 }
