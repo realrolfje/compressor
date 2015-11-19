@@ -32,7 +32,6 @@ void loop() {
   // increases memory access performance.
   float oldtopfiltered = 0.0;
   float newtopfiltered = 0.0;
-  boolean clockboolean = false;
   boolean clippingboolean = false;
   int ringpointer=0;
   
@@ -40,8 +39,17 @@ void loop() {
   // function and re-entering it, with all the stack manipulation
   // that comes with it.
   while(true) {
+    // Set clockoutputpin high, to signal the start of the loop.
+    // Outputpin should oscilate at 14.6 kHz
+    digitalWrite(clockoutpin, HIGH);
+
     // Get audio sample
     int sample = analogRead(inputPin);
+    
+    // Set clockoutpin low, to signal we're done with taking
+    // an audio sample. Taking the audio sample takes between
+    // 20 uS and 30uS, about 33% of the loop time.
+    digitalWrite(clockoutpin, LOW);
 
     // Store sample in the ringbuffer
     ringpointer = (ringpointer+1) % buffersize;
@@ -65,11 +73,6 @@ void loop() {
     int output = round(gain * ring[tailpointer]);
     analogWrite(outputPin, output);
     
-    // Flip a pin to show our clockspeed.
-    // Outputpin should oscilate at 8.078 kHz,
-    // meaning we have a sample rate of twice that.
-    clockboolean = !clockboolean;
-    digitalWrite(clockoutpin, clockboolean);
     
     // Turn on a led if the filtered top detector exceeds a limit
     if (clippingboolean != (newtopfiltered > clippinglevel)) {
