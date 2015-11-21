@@ -9,12 +9,12 @@ const int clippingledpin = 7;
 const int attack = 1;
 const int decay = 1024;
 const byte shiftbits = 5;
-const float targettop = 256 * (2^shiftbits);
+const long targettop = 256 * (2^shiftbits);
 
 // Minimum detected top (this prevents
 // the gain from going up unbridled when
 // there is (almost) not input.
-const float mintop = 32 * (2^shiftbits);
+const long mintop = 32 * (2^shiftbits);
 
 // Clipping level is measured on shifted
 // and filtered top detector. Unshifted
@@ -54,7 +54,7 @@ void loop() {
   // that comes with it.
   while(true) {
     // Set clockoutputpin high, to signal the start of the loop.
-    // Outputpin should oscilate at 14.6 kHz
+    // Outputpin should oscilate at 14.6 kHz  (right now that's 4 kHz because of slow calculatoins)
     digitalWrite(clockoutpin, HIGH);
 
     // Get audio sample
@@ -84,10 +84,8 @@ void loop() {
     int tailpointer = (ringpointer + 1) % buffersize;
     
     // Apply gain based on the top detector on the oldest sample in the buffer
-    int output = round((targettop/newtopfiltered) * ring[tailpointer]);
-    
     // Add dc offset and reduce to 8 bit.
-    output = ((output / (2^shiftbits)) + 512) / 4 ;
+    int output = ((targettop* ring[tailpointer]/ (newtopfiltered * (2^shiftbits))) / 4) + 128;
     analogWrite(outputPin, output);
 
     // Turn on a led if the filtered top detector exceeds a limit
