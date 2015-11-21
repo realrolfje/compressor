@@ -7,14 +7,14 @@ const int clockoutpin = 6;
 const int clippingledpin = 7;
 
 const int attack = 1;
-const int decay = 2048;
+const int decay = 1024;
 const byte shiftbits = 5;
 const float targettop = 256 * (2^shiftbits);
 
 // Minimum detected top (this prevents
 // the gain from going up unbridled when
 // there is (almost) not input.
-const long mintop = 64 << shiftbits;
+const float mintop = 32 * (2^shiftbits);
 
 // Clipping level is measured on shifted
 // and filtered top detector. Unshifted
@@ -60,7 +60,7 @@ void loop() {
     // Get audio sample
     // Bit shhift 6 places to the left so we don't have to
     // calculate with floats, and remove the DC offset.
-    int sample = (analogRead(inputPin) << shiftbits) - 0x7fff;
+    int sample = ((analogRead(inputPin) - 512) * (2^shiftbits));
     
     // Set clockoutpin low, to signal we're done with taking
     // an audio sample. Taking the audio sample takes between
@@ -81,15 +81,21 @@ void loop() {
 
     // Apply calclated gain to a sample which is precisely the
     // number of samples ago as the attack time to prevent plopping.
-    int tailpointer = (ringpointer + buffersize - 1) % buffersize;
+    int tailpointer = (ringpointer + 1) % buffersize;
     
     // Apply gain based on the top detector on the oldest sample in the buffer
 //    int output = (targettop/newtopfiltered) * ring[tailpointer];
-    int output = (targettop/newtopfiltered) * ring[tailpointer];
+//    int output = round(float(targettop/newtopfiltered) * ring[tailpointer]);
+
+    // targettop = 256 * 2^5 = 8192
+    //    mintop = 128 * 2^5 = 4096
+
+//    int output = round((mintop/targettop) * ring[tailpointer]);
+    int output = round((targettop/newtopfiltered) * ring[tailpointer]);
+//    int output = ring[tailpointer];
     
     // Add dc offset and reduce to 8 bit.
-    output =  newtopfiltered + 0x7fff >> shiftbits >> 2;
-    
+    output = ((output / (2^shiftbits)) + 512) / 4 ;
     analogWrite(outputPin, output);
   }
 //  
