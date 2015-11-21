@@ -7,14 +7,14 @@ const int clockoutpin = 6;
 const int clippingledpin = 7;
 
 const int attack = 1;
-const int decay = 2048;
-const byte shiftbits = 6;
-const long targettop = 256 << shiftbits;
+const int decay = 1024;
+const byte shiftbits = 5;
+const float targettop = 256 * (2^shiftbits);
 
 // Minimum detected top (this prevents
 // the gain from going up unbridled when
 // there is (almost) not input.
-const long mintop = 64 << shiftbits;
+const float mintop = 32 * (2^shiftbits);
 
 // Clipping level is measured on shifted
 // and filtered top detector. Unshifted
@@ -60,36 +60,36 @@ void loop() {
     // Get audio sample
     // Bit shhift 6 places to the left so we don't have to
     // calculate with floats, and remove the DC offset.
-    int sample = (analogRead(inputPin) << shiftbits) - 0x7fff;
+    int sample = ((analogRead(inputPin) - 512) * (2^shiftbits));
     
     // Set clockoutpin low, to signal we're done with taking
     // an audio sample. Taking the audio sample takes between
     // 20 uS and 30uS, about 33% of the loop time.
     digitalWrite(clockoutpin, LOW);
-
+    
     // Store sample in the ringbuffer
     ringpointer = (ringpointer + 1) % buffersize;
     ring[ringpointer] = sample;
     
-    // Subtract DC offset and full-wave rectify
+    // Full wave rectify top detector
     int topped = abs(sample);
-  
-    // Create top detector filter with fast attack and slow
-    // decay filter.
+
+    // Fast attack slow decay top detector calculation
     oldtopfiltered = newtopfiltered;
     int nrSamples = (topped > oldtopfiltered) ? attack : decay;
     newtopfiltered = max(mintop, oldtopfiltered + ((topped-oldtopfiltered) / nrSamples));
-    
+
     // Apply calclated gain to a sample which is precisely the
     // number of samples ago as the attack time to prevent plopping.
-    int tailpointer = (ringpointer + buffersize - 1) % buffersize;
+    int tailpointer = (ringpointer + 1) % buffersize;
     
-    // Calculate gain from filtered top and target top, and correct for
-    // the fact that the input was 10 bits and the output is 8 buts.
-    int output = (((targettop * ring[tailpointer]) / newtopfiltered) + 0x7fff) >> (shiftbits+1);
+    // Apply gain based on the top detector on the oldest sample in the buffer
+    int output = round((targettop/newtopfiltered) * ring[tailpointer]);
     
+    // Add dc offset and reduce to 8 bit.
+    output = ((output / (2^shiftbits)) + 512) / 4 ;
     analogWrite(outputPin, output);
-    
+
     // Turn on a led if the filtered top detector exceeds a limit
     if (clippingboolean != (newtopfiltered > clippinglevel)) {
       clippingboolean = (newtopfiltered > clippinglevel);
