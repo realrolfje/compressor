@@ -89,39 +89,13 @@ void loop() {
     // Add dc offset and reduce to 8 bit.
     output = ((output / (2^shiftbits)) + 512) / 4 ;
     analogWrite(outputPin, output);
+
+    // Turn on a led if the filtered top detector exceeds a limit
+    if (clippingboolean != (newtopfiltered > clippinglevel)) {
+      clippingboolean = (newtopfiltered > clippinglevel);
+      digitalWrite(clippingledpin, clippingboolean);
+    }
   }
-//  
-//    
-//
-//    // Store sample in the ringbuffer
-//    ringpointer = (ringpointer + 1) % buffersize;
-//    ring[ringpointer] = sample;
-//    
-//    // Subtract DC offset and full-wave rectify
-//    int topped = abs(sample);
-//  
-//    // Create top detector filter with fast attack and slow
-//    // decay filter.
-//    oldtopfiltered = newtopfiltered;
-//    int nrSamples = (topped > oldtopfiltered) ? attack : decay;
-//    newtopfiltered = max(mintop, oldtopfiltered + ((topped-oldtopfiltered) / nrSamples));
-//    
-//    // Apply calclated gain to a sample which is precisely the
-//    // number of samples ago as the attack time to prevent plopping.
-//    int tailpointer = (ringpointer + buffersize - 1) % buffersize;
-//    
-//    // Calculate gain from filtered top and target top, and correct for
-//    // the fact that the input was 10 bits and the output is 8 buts.
-//    int output = (((targettop * ring[tailpointer]) / newtopfiltered) + 0x7fff) >> (shiftbits+1);
-//    
-//    analogWrite(outputPin, output);
-//    
-//    // Turn on a led if the filtered top detector exceeds a limit
-//    if (clippingboolean != (newtopfiltered > clippinglevel)) {
-//      clippingboolean = (newtopfiltered > clippinglevel);
-//      digitalWrite(clippingledpin, clippingboolean);
-//    }
-//  }
 }
 
 // Speeds up A/D Conversion.
