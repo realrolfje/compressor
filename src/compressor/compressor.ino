@@ -84,15 +84,7 @@ void loop() {
     int tailpointer = (ringpointer + 1) % buffersize;
     
     // Apply gain based on the top detector on the oldest sample in the buffer
-//    int output = (targettop/newtopfiltered) * ring[tailpointer];
-//    int output = round(float(targettop/newtopfiltered) * ring[tailpointer]);
-
-    // targettop = 256 * 2^5 = 8192
-    //    mintop = 128 * 2^5 = 4096
-
-//    int output = round((mintop/targettop) * ring[tailpointer]);
     int output = round((targettop/newtopfiltered) * ring[tailpointer]);
-//    int output = ring[tailpointer];
     
     // Add dc offset and reduce to 8 bit.
     output = ((output / (2^shiftbits)) + 512) / 4 ;
